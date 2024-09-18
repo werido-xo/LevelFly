@@ -1,0 +1,13 @@
+# 1. ignore all the dependencies files
+*.d
+
+# 2. ignore all the object files
+*.o
+
+# 3. ignore all bin/elf-target files
+*.bin
+*.elf
+*.out
+
+# 4. ignore the dis-assemble bin files
+*.dis
