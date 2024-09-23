@@ -21,16 +21,31 @@ void miniuart_disable()
 	writel(value, (unsigned int *) AUX_ENA_ADDR);
 }
 
-int trans_avaliable()
+
+int miniuart_putchar(unsigned char ch)
 {
+	ch &= 0xFF;
 
+	// 1. waiting for fifo having space
+	while (!trans_avaliable());
 
+	// 2. write data to the fifo space
+	writel(ch, (unsigned int *) MIUART_IO_ADDR);
+
+	// 2. backup for using uart0
+	//writel(ch, (unsigned char *) 0xFE201000);
+
+	return ch;
 }
 
-int recv_avaliable()
+unsigned int miniuart_getchar(void)
 {
+	unsigned int val;
 
-
+	val = readl((unsigned int *) MIUART_IO_ADDR);
+	val &= 0xFF;
+	
+	return val;
 }
 
 void miniuart_interrupt_enable()
@@ -49,34 +64,34 @@ void miniuart_interrupt_disable()
 	writel(val, (unsigned int *) MIUART_IER_ADDR);
 }
 
-int miniuart_base_init(int baud)
+void miniuart_base_init(int baud)
 {
-	unsigned int val;
-
-	miniuart_disable();
+	/* 0. enable the miniuart-component, 
+	 *  0.1 enable read/write to the register.
+	 *  0.2 disable tx/rx on the miniuart-line
+	 */
+	//miniuart_enable();
+	writel(0x01, (unsigned int *) AUX_ENA_ADDR);
+	writel(0x00, (unsigned int *) MIUART_CNTL_ADDR);
 
 	/* 1. configuration the baudrate of miniuart */
 	writel(MINIUART_BAUDVAL, (unsigned int *) MIUART_BAUD_ADDR);
 
 	/* 2. disable interupt and baud-rate */
-	miniuart_interrupt_disable();
+	writel(0x00, (unsigned int *) MIUART_IER_ADDR);
 
 	/* 3. for miniuart */
 	//clear trans & recv data fifo
-	val = readl((unsigned int *) MIUART_IIR_ADDR);
-	val |= 0x6;
-	writel(val, (unsigned int *) MIUART_IIR_ADDR);
+	writel(0xC6, (unsigned int *) MIUART_IIR_ADDR);
 
 	// 4. set 8-bits data format and without break
-	writel(0x1, (unsigned int *) MIUART_LCR_ADDR);
-
+	writel(0x03, (unsigned int *) MIUART_LCR_ADDR);
 
 	/* 5. configuration the miniuart functions
 	 *	5.1: enable trans & recv function  
  	 *  5.2: disable the flow-control: RTS & CTS
+	 *  5.3: pull-down the RTS-line, without used 
 	 */
-	val = 0xF;
-	writel(val, (unsigned int *) MIUART_CNTL_ADDR);
-
-	miniuart_enable();
+	writel(0x00, (unsigned int *) MIUART_MCR_ADDR);
+	writel(0x03, (unsigned int *) MIUART_CNTL_ADDR);
 }

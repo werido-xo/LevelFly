@@ -2,23 +2,36 @@
 #include "printf.h"
 
 
-#define GPIO_LED_PIN		18
+#define PER_MSECONDS			(CORE_FREQ / 50000)
 
-void __main_entry()
+
+int __attribute__((optimize("O1"))) loop_delay(int ms)
 {
-	/* 1. set pin-18 to output */
-	gpio_funcs_set(GPIO_LED_PIN, GPIO_FUNCTION_OUT);
+	int counter = 0;
+	int times = PER_MSECONDS * ms;
 
-	/* 2. set the gpio-pin push-up */
-	gpio_pullud_set(GPIO_LED_PIN, GPIO_UPDOWN_UP);
+	while (counter <= times)
+		counter++;
 
-	/* 3. output low to enable the led */
-	gpio_output_set(GPIO_LED_PIN, 0);
+	return times;
+}
 
-	// gpio_funcs_init();
-	// miniuart_base_init(baud);
+
+void __attribute__((optimize("O0"))) __main_entry()
+{
+	int index;
+	unsigned int val;
+
+	/* 1. set miniuart & led related pins  */
+	gpio_funcs_init();
+
+	/* 2. init the miniuart-related contorller */
+	miniuart_putchar('h');
+	miniuart_putchar('i');
+
+	val = readl((unsigned int *) GPIO_FSEL1_ADDR);
+	printf("The register value is 0x%08x \n", val);
 
 	while (1) {
-
 	}
 }

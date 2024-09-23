@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include "board.h"
+
 
 struct printf_info {
     char *bf;   /* Digit buffer */
@@ -159,8 +161,7 @@ abort:
 static void putc_normal(struct printf_info *info, char ch)
 {
 	// this function need instead by user
-	//putchar(ch);
-	ch += ch;
+	miniuart_putchar(ch);
 }
 
 int vprintf(const char *fmt, va_list va)
@@ -171,7 +172,7 @@ int vprintf(const char *fmt, va_list va)
 	return _vprintd(&info, fmt, va);
 }
 
-int printd(const char *fmt, ...)
+int printf(const char *fmt, ...)
 {
 	struct printf_info info;
 

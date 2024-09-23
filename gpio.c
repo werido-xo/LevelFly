@@ -8,10 +8,10 @@ void gpio_funcs_set(u32 pin, u32 alt)
 	offs = pin / 10;
 	shift = pin % 10;
 
-	val = readl((unsigned int *)(GPIO_BASE_ADDR + offs << 2));
+	val = readl((unsigned int *)(GPIO_BASE_ADDR + (offs << 2)));
 	val &= ~(0x7 << (shift * 3));
-	val |= alt;
-	writel(val, (unsigned int *)(GPIO_BASE_ADDR + offs << 2));
+	val |= (alt << (shift * 3));
+	writel(val, (unsigned int *)(GPIO_BASE_ADDR + (offs << 2)));
 }
 
 
@@ -29,11 +29,13 @@ void gpio_output_set(u32 pin, u32 level)
 
 	/* 2. get the offset of the pin in register */
 	shift = pin >> 5;		
-	if (shift) 
-		addr += 0x4;
-	else
+	if (shift) {
+		shift = pin & 0x1F;
+		addr += 0x1;
+	} else {
 		shift = pin;
-		
+	}
+	
 	writel(0x1 << shift, addr);
 }
 
@@ -46,7 +48,7 @@ unsigned int gpio_level_read(u32 pin)
 	addr = GPIO_LEV0_ADDR;
 	shift = pin >> 5;		
 	if (shift) 
-		addr += 0x4;
+		addr += 0x1;
 	else
 		shift = pin;
 
@@ -61,7 +63,6 @@ void gpio_pullud_set(u32 pin, u32 up_down)
 {
 	unsigned int *addr;
 	unsigned int offs, bits, val;
-
 	
 	offs = pin >> 4;
 	bits = (pin & 0xF) << 1;
@@ -73,17 +74,13 @@ void gpio_pullud_set(u32 pin, u32 up_down)
 	writel(val, (unsigned int *) addr);
 }
 
-
-
+/* gpio_funcs_init(void)
+ *
+ * @funcs: init all pins will be used in the project
+ */
 void gpio_funcs_init(void)
 {
-	unsigned int val;
-	unsigned int mask = (0x7 << 15) | (0x7 << 12);
-	unsigned int setting = (GPIO_FUNCTION_ALT5 << 15) \
-							| (GPIO_FUNCTION_ALT5 << 12);
-
-	val = readl(GPIO_FSEL1_ADDR);
-	val = val & (~mask);
-	val |= setting;
-	writel(val, GPIO_FSEL1_ADDR);
+	gpio_funcs_set(GPIO_LED_PIN, GPIO_FUNCTION_OUT);
+	gpio_funcs_set(MINIUART_TXPIN, GPIO_FUNCTION_ALT5);
+	gpio_funcs_set(MINIUART_RXPIN, GPIO_FUNCTION_ALT5);
 }

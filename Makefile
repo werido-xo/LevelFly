@@ -11,7 +11,8 @@ ASM_FLAGS := -Iinclude
 
 # 3. define the dependency files of the target
 BUILD_DIRS := $(shell pwd)
-SRC_FILES := $(wildcard $(BUILD_DIRS)/*.c)
+# SRC_FILES := $(wildcard $(BUILD_DIRS)/*.c)
+SRC_FILES := main.c gpio.c miniuart.c printf.c
 ASM_FILES := $(wildcard $(BUILD_DIRS)/*.S) 
 
 SRC_OBJS = $(patsubst %.c, %.o, $(SRC_FILES))

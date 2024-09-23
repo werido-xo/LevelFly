@@ -6,9 +6,14 @@
 
 typedef unsigned int* iomem;
 
+
+/* The core-processor execution frequency */
+#define CORE_FREQ				250000000
+
+
 /* define base address of the aux componnet */
-#define MINIUART_BASE_ADDR		0x7E215000
-#define GPIO_BASE_ADDR			0x7E200000
+#define MINIUART_BASE_ADDR		0xFE215000
+#define GPIO_BASE_ADDR			0xFE200000
 
 
 /* define aux common control register addr */
@@ -23,8 +28,8 @@ typedef unsigned int* iomem;
 #define MIUART_MSR_ADDR			(iomem) (MINIUART_BASE_ADDR + 0x58)
 #define MIUART_SCR_ADDR			(iomem) (MINIUART_BASE_ADDR + 0x5c)
 #define MIUART_CNTL_ADDR		(iomem) (MINIUART_BASE_ADDR + 0x60)
-#define MIUART_STAT_ADDR		(iomem) (MINIUART_BASE_ADDR + 0x68)
-#define MIUART_BAUD_ADDR		(iomem) (MINIUART_BASE_ADDR + 0x6c)
+#define MIUART_STAT_ADDR		(iomem) (MINIUART_BASE_ADDR + 0x64)
+#define MIUART_BAUD_ADDR		(iomem) (MINIUART_BASE_ADDR + 0x68)
 
 
 /* define register address in the raspberrypi */
@@ -78,10 +83,83 @@ typedef unsigned int* iomem;
 
 /* define miniuart related funcs */
 #define MINIUART_BAUDRATE		115200
-#define SYSTEM_FREQ				250000000
-#define MINIUART_BAUDVAL		SYSTEM_FREQ/(8*MINIUART_BAUDRATE) - 1
+#define MINIUART_BAUDVAL		(CORE_FREQ/(8*MINIUART_BAUDRATE) - 1)
 
-int miniuart_init(void);
+
+/* define the pins used in the example */
+#define GPIO_LED_PIN		18
+#define MINIUART_TXPIN		14
+#define MINIUART_RXPIN		15
+
+
+
+/* @funcs: transmitter fifo can accept at least one */
+static inline int trans_avaliable()
+{
+	unsigned int val;
+	
+	val = readl((unsigned int *) MIUART_LSR_ADDR);
+	val = (val >> 5) & 0x1;
+
+	return val;
+}
+
+/* @funcs: whether the transmitter on transmit */
+static inline int trans_is_idle()
+{
+	unsigned int val;
+	
+	val = readl((unsigned int *) MIUART_LSR_ADDR);
+	val = (val >> 6) & 0x1;
+
+	return val;
+}
+
+static inline int recv_is_overrun()
+{
+	unsigned int val;
+	
+	val = readl((unsigned int *) MIUART_LSR_ADDR);
+	val = (val >> 1) & 0x1;
+
+	return val;
+}
+
+static inline int recv_is_idle()
+{
+	unsigned int val;
+	
+	val = readl((unsigned int *) MIUART_LSR_ADDR);
+	val = (val >> 0) & 0x1;
+
+	return !val;
+}
+
+
+static inline int trans_fifo_level()
+{
+	unsigned int val;
+	
+	val = readl((unsigned int *) MIUART_STAT_ADDR);
+	val = (val >> 24) & 0x7;
+
+	return val;
+}
+
+static inline int recv_fifo_level()
+{
+	unsigned int val;
+
+	val = readl((unsigned int *) MIUART_STAT_ADDR);
+	val = (val >> 16) & 0x7;
+
+	return val;
+}
+
+
+
+
+void miniuart_base_init(int baud);
 int miniuart_putchar(unsigned char ch);
 
 

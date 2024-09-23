@@ -17,7 +17,7 @@
 
 SECTIONS
 {
-	. = 0x80000000;
+	. = 0x80000;
 	.start : {
 		 __start_text = .; 
 		 KEEP(*(.text.start));
