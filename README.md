@@ -3,12 +3,17 @@
 *data*: 2024/09/23
 *description*: This project aim to design a simple bare metal system for raspberrypi 4b. Through this project, we can learing the exception level, system-call, and other system-related acknowledge.
 
+
 ## 1. How to access register on Raspberry-Pi
 `Note`: The periheral controller base address is `0xFE20_0000`. 
 
 The address stated in the BCM2711-datasheet is the legacy peripheral controller
 address. It can not be read/write in the 64-bit mode ( we add `arm_64bit = 1` in the
 file of config.txt).
+
+> [!TIP}
+> Take care of the GIC-400 distributor register offset is 0x1001, and the CPU interface register offset is 0x2000. Therefore, don't forgot to add this offset to the related register before access.
+
 
 ## 2. How to use uart-console on your board
 If you want to used miniuart (UART1) or UART0, the `config.txt` shoud be modify

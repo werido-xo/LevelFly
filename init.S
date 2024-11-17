@@ -9,6 +9,9 @@
 #include "assembler.h"
 
 
+#define _STACK			0x1000000
+#define _EXCSTACK		0x2000000
+
 	.section ".text.start"
 	.global _start
 
@@ -18,7 +21,7 @@
 _start:
 	mrs		x1, mpidr_el1
 	and		x1, x1, #3 
-	cbz		x1, primary_entry
+	cbz		x1, level_change
 
 // assume processor not used in low power mode
 __processor_hang:
@@ -55,11 +58,32 @@ light_led:
 
 	ret
 
+level_change:
+    // config EL1 before leaving inital(!) EL2, exc. handler run in EL1h
+    ldr     x1, =_EXCSTACK
+    msr     sp_el1, x1
+    
+    // enable AArch64 in EL1
+    mov     x2, #(1 << 31)          // AArch64
+    msr     hcr_el2, x2
+    
+    // Setup System Control register access
+    mov     x2, #0x0800             // = more details!
+    movk    x2, #0x30d0, lsl #16    // last bit is 0 = MMU disabled (Cache?)
+    msr     sctlr_el1, x2
+    
+    // change execution level to EL1
+    mov     x2, #0x3c4
+    msr     spsr_el2, x2            // EL1_SP0 | D | A | I | F
+    adr     x2, primary_entry
+    msr     elr_el2, x2
+    eret
+
 
 primary_entry:
-	// ldr		x1, =__stack
+	ldr		x1, =_STACK
 	// sub		x1, x1, #stack_size
-	ldr		x1, = _start
+	//ldr		x1, = _start
 	mov		sp, x1
 
 	// clear section .bss to zero
@@ -74,67 +98,61 @@ __clean_bss:
 	cbnz	w2, __clean_bss
 
 
-end_clean_bss:
 __jump_to_main:
+	// set the vector base address for EL1
+	adr		x1, vectors
+	msr		vbar_el1, x1		// vector table address
+
 	// goto c functions
-	b	__main_entry 
+	b		__main_entry 
 
 
 
-/* define exception operations */
-// el1_sync_call:
-// el1_irq_call:
-// el1_fiq_call:
-// el1_err_call:
-//	b	el1_sync_call
+#include "entry.S"
 
-// el1x_sync_call:
-// el1x_irq_call:
-// el1x_fiq_call:
-// el1x_err_call:
-//	b	el1x_sync_call
-
-// el0_sync_call64:
-// el0_irq_call64:
-// el0_fiq_call64:
-// el0_err_call64:
-//	b	el0_sync_call64
+/* define exception operations: goto exception ops
+ * kernel_entry be defined as a macro, without effect
+ * previous process state
+ */
+el1x_irq_call:
+	kernel_entry
+	bl		gic400_int_dispatch
+	kernel_exit
 
 
-// el0_sync_call32:
-// el0_irq_call32:
-// el0_fiq_call32:
-// el0_err_call32:
-//	b	el0_sync_call32
+invalid_gic400_entry:
+	eret 		
 
-/* interrupt functions vectors
+
+
+/* gic-400 interrupt functions vectors, the init
+ * of this controller implemented in the file gic-400.c
+ *
  * This designed for el1 of armv8
  */	
-//	.pushsection	".entry.text", "ax"
-//	.align	11
-/*
+	.pushsection	".entry.text", "ax"
+	.align	11
 SYM_CODE_START(vectors)
-	ventry		el1_sync_call
-	ventry		el1_irq_call
-	ventry		el1_fiq_call
-	ventry		el1_err_call
-
-	ventry		el1x_sync_call
+	ventry		invalid_gic400_entry
 	ventry		el1x_irq_call
-	ventry		el1x_fiq_call
-	ventry		el1x_err_call
+	ventry		invalid_gic400_entry
+	ventry		invalid_gic400_entry
 
-	ventry		el0_sync_call64
-	ventry		el0_irq_call64
-	ventry		el0_fiq_call64
-	ventry		el0_err_call64
+	ventry		invalid_gic400_entry
+	ventry		el1x_irq_call
+	ventry		invalid_gic400_entry
+	ventry		invalid_gic400_entry
 
-	ventry		el0_sync_call32
-	ventry		el0_irq_call32
-	ventry		el0_fiq_call32
-	ventry		el0_err_call32
+	ventry		invalid_gic400_entry
+	ventry		invalid_gic400_entry
+	ventry		invalid_gic400_entry
+	ventry		invalid_gic400_entry
+
+	ventry		invalid_gic400_entry
+	ventry		invalid_gic400_entry
+	ventry		invalid_gic400_entry
+	ventry		invalid_gic400_entry
 SYM_CODE_END(vectors)
-*/
 
 //.balign		16
 //__stack:

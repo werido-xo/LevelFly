@@ -14,6 +14,7 @@ typedef unsigned int* iomem;
 /* define base address of the aux componnet */
 #define MINIUART_BASE_ADDR		0xFE215000
 #define GPIO_BASE_ADDR			0xFE200000
+#define SYSTIMER_ADDR			0xFE003000
 
 
 /* define aux common control register addr */
@@ -90,6 +91,16 @@ typedef unsigned int* iomem;
 #define GPIO_LED_PIN		18
 #define MINIUART_TXPIN		14
 #define MINIUART_RXPIN		15
+
+
+/* define register for the Sys-Timer */
+#define SYSTIMER_CTLR_ADDR		(iomem) (SYSTIMER_ADDR + 0x00)
+#define SYSTIMER_CLOW_ADDR		(iomem) (SYSTIMER_ADDR + 0x04)
+#define SYSTIMER_CHIGH_ADDR		(iomem) (SYSTIMER_ADDR + 0x08)
+#define SYSTIMER_CC0_ADDR		(iomem) (SYSTIMER_ADDR + 0x0c)
+#define SYSTIMER_CC1_ADDR		(iomem) (SYSTIMER_ADDR + 0x10)
+#define SYSTIMER_CC2_ADDR		(iomem) (SYSTIMER_ADDR + 0x14)
+#define SYSTIMER_CC3_ADDR		(iomem) (SYSTIMER_ADDR + 0x18)
 
 
 
