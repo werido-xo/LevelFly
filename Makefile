@@ -1,14 +1,16 @@
 
 # 1. define the toolchains for the target
-TOOLCHAIN_PATH ?= /opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin
-# TOOLCHAIN_PATH ?= /opt/gcc-linaro-11.3.1-2022.06-x86_64_aarch64-linux-gnu/bin
-CROSS_COMPILE := $(TOOLCHAIN_PATH)/aarch64-none-linux-gnu
-#CROSS_COMPILE := $(TOOLCHAIN_PATH)/aarch64-linux-gnu
+TOOLCHAIN_PATH ?= /home/ubuntu/DataPan/ToolChain/gcc-linaro-12.2.1-2022.09-x86_64_aarch64-linux-gnu/bin
+# TOOLCHAIN_PATH ?= /home/ubuntu/DataPan/ToolChain/arm-gnu-toolchain-14.3.rel1-x86_64-aarch64-none-linux-gnu/bin
+CROSS_COMPILE := $(TOOLCHAIN_PATH)/aarch64-linux-gnu
+# CROSS_COMPILE := $(TOOLCHAIN_PATH)/aarch64-none-linux-gnu
 
 
 # 2. compile parameters
-SRC_FLAGS := -Wall -O2 -fno-builtin -ffreestanding -nostdlib -Iinclude
-ASM_FLAGS := -Iinclude
+SRC_FLAGS := -Wall -O2 -march=armv8-a -fno-builtin -ffreestanding -nostdlib 
+# ASM_FLAGS := -Iinclude
+# SRC_FLAGS := -Wall -O1 -march=armv8-a -mgeneral-regs-only -fno-builtin -ffreestanding -nostdlib
+ASM_FLAGS := 
 
 
 # 3. define the dependency files of the target

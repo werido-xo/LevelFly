@@ -1,7 +1,7 @@
 /* The file "init.S" designed for boot linux-platform
  *
  *	author: weirdo-xo
- *	data: 2024/09/04
+ *	date: 2024/09/04
  *
  */
 
@@ -9,8 +9,8 @@
 #include "assembler.h"
 
 
-#define _STACK			0x1000000
-#define _EXCSTACK		0x2000000
+#define _STACK			0x51000000
+#define _EXCSTACK		0x52000000
 
 	.section ".text.start"
 	.global _start
@@ -62,7 +62,17 @@ level_change:
     // config EL1 before leaving inital(!) EL2, exc. handler run in EL1h
     ldr     x1, =_EXCSTACK
     msr     sp_el1, x1
-    
+   
+	// MSR		CPTR_EL3, XZR
+	// nop
+
+	MSR		CPTR_EL2, XZR
+	nop
+
+	MOV		x0, #0x00300000
+	MSR		CPACR_EL1, x0
+	nop
+ 
     // enable AArch64 in EL1
     mov     x2, #(1 << 31)          // AArch64
     msr     hcr_el2, x2
@@ -81,9 +91,9 @@ level_change:
 
 
 primary_entry:
-	ldr		x1, =_STACK
+ 	ldr		x1, =_STACK
 	// sub		x1, x1, #stack_size
-	//ldr		x1, = _start
+	// ldr		x1, = __stack_el0
 	mov		sp, x1
 
 	// clear section .bss to zero
@@ -102,6 +112,9 @@ __jump_to_main:
 	// set the vector base address for EL1
 	adr		x1, vectors
 	msr		vbar_el1, x1		// vector table address
+
+	// test  qregister
+	// fadd	d0, d1, d2
 
 	// goto c functions
 	b		__main_entry 
@@ -154,8 +167,16 @@ SYM_CODE_START(vectors)
 	ventry		invalid_gic400_entry
 SYM_CODE_END(vectors)
 
-//.balign		16
-//__stack:
+	
+	.balign		16
+	.data
+__stack_el0:	.word	0x01000000
+				.skip	4, 0
+
+__stack_el1:	.word	0x02000000
+				.skip	4, 0
+
+// __stack:
 //	.skip	stack_size		//alloc stack spece for call c
 
 	.end					//end of the init.S
