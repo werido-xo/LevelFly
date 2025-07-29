@@ -157,6 +157,19 @@ abort:
 	return 0;
 }
 
+int debug_print(const char *fmt)
+{
+	char ch;
+	int count = 0;
+
+	while ((ch = *(fmt++))) {
+		count += 1;
+		miniuart_putchar(ch);
+	}
+
+	return count; 
+}
+
 
 static void putc_normal(struct printf_info *info, char ch)
 {
@@ -172,16 +185,19 @@ int vprintf(const char *fmt, va_list va)
 	return _vprintd(&info, fmt, va);
 }
 
-int printf(const char *fmt, ...)
+int __attribute__((format(printf, 1, 2))) printf(const char *fmt, ...)
 {
 	struct printf_info info;
-
 	va_list va;
 	int ret;
 
 	info.putc = putc_normal;
 	va_start(va, fmt);
 	ret = _vprintd(&info, fmt, va);
+	// while ((ch = *(fmt++))) {
+	// 	count += 1;
+	//	info.putc(&info, ch);
+	// }
 	va_end(va);
 
 	return ret;

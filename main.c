@@ -1,6 +1,7 @@
 #include "board.h"
 #include "printf.h"
 #include "gic-400.h"
+#include "stdarg.h"
 
 #define PER_MSECONDS			(CORE_FREQ / 50000)
 #define PER_PERIODS				0x5D0000
@@ -32,6 +33,19 @@ unsigned int get_currentEL()
 	return val >> 2;
 }
 
+unsigned long get_sctlr()
+{
+	unsigned long val;
+
+	__asm__ __volatile__(
+	"mrs	%0, sctlr_el1 \n"
+	: "=r" (val)
+	:
+	: "memory"
+	);
+
+	return val;
+}
 
 void system_timer_init(void)
 {
@@ -48,11 +62,43 @@ void system_timer_init(void)
 }
 
 
+unsigned int sum_funcs(int count, va_list va)
+{
+	int sum, index;
+	sum = 0;
+
+
+
+	return sum;
+}
+
+/* variable parameter functions
+ * 1. get the base address of count
+ * 2. based on the &count get the number of the variable
+ */
+unsigned int my_sum(int count, ...)
+{
+	int base = 0x30;
+	va_list ap;			// it may be pointer in the implement
+	int index;
+
+	va_start(ap, count);
+	for (index = 0; index < count; index++) {
+		base += va_arg(ap, int);
+	}
+	// base += sum_funcs(count, ap);
+	va_end(ap);
+
+	return base;
+}
+
+
 void __attribute__((optimize("O0"))) __main_entry()
 {
 	int index;
 	unsigned int val;
 	int lines;
+	unsigned char out;
 
 	/* 1. set miniuart & led related pins  */
 	gpio_funcs_init();
@@ -64,7 +110,7 @@ void __attribute__((optimize("O0"))) __main_entry()
 	local_irq_disable();
 	miniuart_putchar('i');
 
-	unsigned int *addr = 0x1000000;
+	unsigned int *addr = (unsigned int *)0x51000000;
 	unsigned int data = 0x5A5A5A5A;
 
 	*addr = data;
@@ -82,8 +128,7 @@ void __attribute__((optimize("O0"))) __main_entry()
 	/* 3. init the gic-400 controller */
 	lines = gic400_init();
 	miniuart_putchar('d');
-
-
+	
 	local_irq_enable();
 	local_irq_barrier();
 
@@ -100,9 +145,22 @@ void __attribute__((optimize("O0"))) __main_entry()
 //	val = get_currentEL();
 //	printf("CurrentEL = %d \n", val);
 
+//	val = get_sctlr();
+//	printf("SCTLR = 0x%16x \n", val);
+	
 	/* 4. enable the system timer */
 	system_timer_init();
 
+
+	// printf("\n");
+	debug_print("Hello\n");
+
+	printf("weirdo\n");
+
+	out = my_sum(3, 2, 3, 1);
+	miniuart_putchar(out);
+
+	miniuart_putchar('0');
 
 //	unsigned int dat0, dat1, offs;
 //
@@ -136,9 +194,17 @@ void __attribute__((optimize("O0"))) __main_entry()
 		loop_delay(400);
 
 		val = readl(SYSTIMER_CTLR_ADDR);
-		if (val & 0x02)
+		if (val & 0x02) {
+			// val = val & 0xF;
+			// writel(val, SYSTIMER_CTLR_ADDR);
+
+			// val = readl(SYSTIMER_CLOW_ADDR);
+			// val += PER_PERIODS;
+			// writel(val, SYSTIMER_CC1_ADDR);
+
 			miniuart_putchar('y');
-		else	
+		} else	{
 			miniuart_putchar('-');
+		}
 	}
 }
